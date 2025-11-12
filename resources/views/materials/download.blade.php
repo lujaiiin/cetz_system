@@ -1,199 +1,217 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-6" x-data='materialsDownload({ materials: @json($materials), query: @json($query) })' x-init="init()">
-    <div class="flex flex-wrap gap-3">
-        <div class="flex-1 min-w-[180px] bg-white border rounded-lg p-4 shadow-sm">
-            <div class="text-sm text-gray-500">إجمالي الطلبات</div>
-            <div class="text-2xl font-bold" x-text="summary.total"></div>
+<div class="space-y-6" x-data="materialsAssign()" x-init="init()">
+    <div class="bg-white rounded-lg shadow p-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">الطالب</label>
+            <select x-model="selectedStudent" class="border rounded px-3 py-2 w-full">
+                <template x-for="s in students" :key="s.number">
+                    <option :value="s.number" x-text="s.name + ' — ' + s.number"></option>
+                </template>
+            </select>
         </div>
-        <div class="flex-1 min-w-[180px] bg-white border rounded-lg p-4 shadow-sm">
-            <div class="text-sm text-gray-500">تم التسليم</div>
-            <div class="text-2xl font-bold text-green-600" x-text="summary.delivered"></div>
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">القسم</label>
+            <select x-model="selectedDepartment" class="border rounded px-3 py-2 w-full">
+                <template x-for="d in departments" :key="d"><option :value="d" x-text="d"></option></template>
+            </select>
         </div>
-        <div class="flex-1 min-w-[180px] bg-white border rounded-lg p-4 shadow-sm">
-            <div class="text-sm text-gray-500">بانتظار التسليم</div>
-            <div class="text-2xl font-bold text-amber-500" x-text="summary.pending"></div>
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">الفصل</label>
+            <select x-model="selectedSemester" class="border rounded px-3 py-2 w-full">
+                <option value="ربيع 2025">ربيع 2025</option>
+                <option value="خريف 2024">خريف 2024</option>
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-4 py-2 bg-gray-200 rounded" @click="printSheet">🖨️ طباعة المواد</button>
+            <button class="px-4 py-2 bg-indigo-600 text-white rounded" @click="printResult">🖨️ طباعة النتيجة</button>
+            <button class="px-4 py-2 bg-green-600 text-white rounded" @click="exportCsv">⬇️ تصدير CSV</button>
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6 space-y-4">
-        <div class="flex flex-wrap gap-3 items-end">
-            <div class="flex flex-wrap gap-3 items-end flex-1">
-                <div class="flex-1 min-w-[200px]">
-                    <label class="block text-sm text-gray-600 mb-1">بحث</label>
-                    <input type="text" x-model.trim="search" @input.debounce.300="applyFilters" placeholder="ابحث باسم الطالب أو المادة" class="border rounded px-3 py-2 w-full">
-                </div>
-                <div class="min-w-[160px]">
-                    <label class="block text-sm text-gray-600 mb-1">القسم</label>
-                    <select x-model="departmentFilter" @change="applyFilters" class="border rounded px-3 py-2 w-full">
-                        <option value="">كل الأقسام</option>
-                        <template x-for="dept in departments" :key="'dept-' + dept">
-                            <option :value="dept" x-text="dept"></option>
-                        </template>
-                    </select>
-                </div>
-                <div class="min-w-[160px]">
-                    <label class="block text-sm text-gray-600 mb-1">الفصل</label>
-                    <select x-model="semesterFilter" @change="applyFilters" class="border rounded px-3 py-2 w-full">
-                        <option value="">كل الفصول</option>
-                        <template x-for="sem in semesters" :key="'sem-' + sem">
-                            <option :value="sem" x-text="sem"></option>
-                        </template>
-                    </select>
-                </div>
-                <div class="min-w-[160px]">
-                    <label class="block text-sm text-gray-600 mb-1">حالة التسليم</label>
-                    <select x-model="deliveryFilter" @change="applyFilters" class="border rounded px-3 py-2 w-full">
-                        <option value="all">الكل</option>
-                        <option value="pending">بانتظار التسليم</option>
-                        <option value="delivered">تم التسليم</option>
-                    </select>
-                </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white rounded-lg shadow p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold">المواد المتاحة</h2>
+                <input type="text" class="border rounded px-3 py-1" placeholder="بحث في المواد" x-model.trim="searchAvailable">
             </div>
-            <div class="flex gap-2">
-                <button type="button" class="h-10 px-4 bg-gray-200 rounded" @click="openPrint">🖨️ طباعة</button>
-                <button type="button" class="h-10 px-4 bg-green-600 text-white rounded" @click="exportCsv">⬇️ تصدير CSV</button>
-                <button type="button" class="h-10 px-4 bg-gray-100 border rounded" @click="resetFilters">إعادة الضبط</button>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm border">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="border px-2 py-1">رقم</th>
+                            <th class="border px-2 py-1">رمز</th>
+                            <th class="border px-2 py-1">اسم المادة</th>
+                            <th class="border px-2 py-1">وحدات</th>
+                            <th class="border px-2 py-1">ساعات</th>
+                            <th class="border px-2 py-1">إضافة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="m in filteredAvailable()" :key="m.number + m.code">
+                            <tr class="hover:bg-gray-50">
+                                <td class="border px-2 py-1" x-text="m.number"></td>
+                                <td class="border px-2 py-1" x-text="m.code"></td>
+                                <td class="border px-2 py-1" x-text="m.name"></td>
+                                <td class="border px-2 py-1" x-text="m.units"></td>
+                                <td class="border px-2 py-1" x-text="m.hours"></td>
+                                <td class="border px-2 py-1"><button class="px-2 py-1 bg-blue-600 text-white rounded" @click="assign(m)">إضافة</button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm border" id="materials-table">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="border px-3 py-2 text-right">رقم</th>
-                        <th class="border px-3 py-2 text-right">الطالب</th>
-                        <th class="border px-3 py-2 text-right">القسم</th>
-                        <th class="border px-3 py-2 text-right">المادة</th>
-                        <th class="border px-3 py-2 text-right">الفصل</th>
-                        <th class="border px-3 py-2 text-right">الحالة</th>
-                        <th class="border px-3 py-2 text-right">إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-if="!records.length">
+        <div class="bg-white rounded-lg shadow p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold">مواد الطالب</h2>
+                <div class="text-sm text-gray-600">إجمالي الوحدات: <span class="font-semibold" x-text="totals.units"></span> • الساعات: <span class="font-semibold" x-text="totals.hours"></span></div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm border">
+                    <thead class="bg-gray-100">
                         <tr>
-                            <td colspan="7" class="border px-3 py-4 text-center text-gray-500">لا توجد طلبات مطابقة للبحث الحالي.</td>
+                            <th class="border px-2 py-1">رقم</th>
+                            <th class="border px-2 py-1">رمز</th>
+                            <th class="border px-2 py-1">اسم المادة</th>
+                            <th class="border px-2 py-1">وحدات</th>
+                            
+                            <th class="border px-2 py-1">إعادة؟</th>
+                            <th class="border px-2 py-1">المجموعة</th>
+                            <th class="border px-2 py-1"> 100؟</th>
+                            
+                            
+                            
+                            <th class="border px-2 py-1">ملاحظة</th>
+                            <th class="border px-2 py-1">إزالة</th>
                         </tr>
-                    </template>
-                    <template x-for="row in records" :key="row.id">
-                        <tr class="hover:bg-gray-50">
-                            <td class="border px-3 py-2" x-text="row.id"></td>
-                            <td class="border px-3 py-2" x-text="row.student"></td>
-                            <td class="border px-3 py-2" x-text="row.department"></td>
-                            <td class="border px-3 py-2" x-text="row.subject"></td>
-                            <td class="border px-3 py-2" x-text="row.semester"></td>
-                            <td class="border px-3 py-2">
-                                <span class="px-2 py-1 rounded"
-                                      :class="row.delivered ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
-                                      x-text="row.delivered ? 'تم التسليم' : 'بانتظار التسليم'"></span>
-                            </td>
-                            <td class="border px-3 py-2 space-x-2 rtl:space-x-reverse">
-                                <button type="button" class="px-2 py-1 bg-blue-500 text-white rounded" @click="downloadMaterial(row)">⬇️ تنزيل</button>
-                                <button type="button" class="px-2 py-1 bg-gray-200 rounded" @click="toggleDelivered(row)" x-text="row.delivered ? 'تعيين كمعلق' : 'تأكيد التسليم'"></button>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <template x-for="m in assignedList()" :key="m.number + m.code">
+                            <tr class="hover:bg-gray-50">
+                                <td class="border px-2 py-1" x-text="m.number"></td>
+                                <td class="border px-2 py-1" x-text="m.code"></td>
+                                <td class="border px-2 py-1" x-text="m.name"></td>
+                                <td class="border px-2 py-1" x-text="m.units"></td>
+                                
+                                <td class="border px-2 py-1 text-center">
+                                    <input type="checkbox" x-model="m.is_repeat" @change="recalcTotals" title="وضع علامة إعادة">
+                                </td>
+                                <td class="border px-2 py-1">
+                                    <select x-model="m.group" class="border rounded px-2 py-1">
+                                        <template x-for="g in [1,2,3,4,5,6]" :key="'g'+g">
+                                            <option :value="g" x-text="g"></option>
+                                        </template>
+                                    </select>
+                                </td>
+                                <td class="border px-2 py-1 text-center">
+                                    <input type="checkbox" x-model="m.on100" title="إدخال على 100%">
+                                </td>
+                                
+                                <td class="border px-2 py-1">
+                                    <input type="text" class="border rounded px-2 py-1 w-full" x-model="m.note">
+                                </td>
+                                <td class="border px-2 py-1"><button class="px-2 py-1 bg-red-100 text-red-700 rounded" @click="unassign(m)">حذف</button></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('materialsDownload', (config) => ({
-            raw: config.materials || [],
-            search: config.query || '',
-            dataset: [],
-            records: [],
-            departments: [],
-            semesters: [],
-            departmentFilter: '',
-            semesterFilter: '',
-            deliveryFilter: 'all',
-            summary: { total: 0, delivered: 0, pending: 0 },
-
-            init() {
-                this.dataset = (this.raw || []).map((item, index) => ({
-                    id: item.id,
-                    student: item.student_name,
-                    department: item.department,
-                    subject: item.subject,
-                    semester: item.semester,
-                    delivered: index % 2 === 0
-                }));
-                this.departments = Array.from(new Set(this.dataset.map(item => item.department))).filter(Boolean);
-                this.semesters = Array.from(new Set(this.dataset.map(item => item.semester))).filter(Boolean);
-                this.applyFilters();
-            },
-
-            applyFilters() {
-                const term = this.search.trim();
-                this.records = this.dataset.filter(row => {
-                    const matchesTerm = !term || [row.student, row.department, row.subject, row.semester].some(field => field.includes(term));
-                    const matchesDept = !this.departmentFilter || row.department === this.departmentFilter;
-                    const matchesSem = !this.semesterFilter || row.semester === this.semesterFilter;
-                    const matchesDelivery = this.deliveryFilter === 'all' || (this.deliveryFilter === 'delivered' ? row.delivered : !row.delivered);
-                    return matchesTerm && matchesDept && matchesSem && matchesDelivery;
-                });
-                this.updateSummary();
-            },
-
-            updateSummary() {
-                const deliveredCount = this.records.filter(row => row.delivered).length;
-                this.summary.total = this.records.length;
-                this.summary.delivered = deliveredCount;
-                this.summary.pending = this.records.length - deliveredCount;
-            },
-
-            toggleDelivered(row) {
-                row.delivered = !row.delivered;
-                this.updateSummary();
-            },
-
-            downloadMaterial(row) {
-                alert('تم تجهيز ملف المادة للطالب ' + row.student + '.');
-            },
-
-            exportCsv() {
-                if (!this.records.length) {
-                    alert('لا توجد بيانات لتصديرها.');
-                    return;
-                }
-                const header = ['رقم', 'الطالب', 'القسم', 'المادة', 'الفصل', 'الحالة'];
-                const rows = this.records.map(row => [
-                    row.id,
-                    row.student,
-                    row.department,
-                    row.subject,
-                    row.semester,
-                    row.delivered ? 'تم التسليم' : 'بانتظار التسليم'
-                ]);
-                const csv = [header].concat(rows).map(columns => columns.map(value => '"' + value + '"').join(',')).join('\n');
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'materials-download.csv';
-                link.click();
-                URL.revokeObjectURL(link.href);
-            },
-
-            openPrint() {
-                const baseUrl = '{{ route('materials.download.print') }}';
-                const url = baseUrl + '?query=' + encodeURIComponent(this.search.trim());
-                window.open(url, '_blank');
-            },
-
-            resetFilters() {
-                this.search = '';
-                this.departmentFilter = '';
-                this.semesterFilter = '';
-                this.deliveryFilter = 'all';
-                this.applyFilters();
+document.addEventListener('alpine:init', () => {
+    Alpine.data('materialsAssign', () => ({
+        students: [
+            { number: '1091252001', name: 'آمنة علي', department: 'القسم العام' },
+            { number: '1091252002', name: 'محمد عمر', department: 'القسم العام' },
+            { number: '1091252003', name: 'سارة محمود', department: 'القسم العام' }
+        ],
+        departments: ['القسم العام','علوم حاسوب','هندسة كهربائية','هندسة ميكانيك'],
+        catalog: {
+            'القسم العام': {
+                'ربيع 2025': [
+                    { number: 350, code: 'CE1', name: 'رسم 1', units: 2, hours: 3 },
+                    { number: 352, code: 'CE2', name: 'رسم 2', units: 2, hours: 3 },
+                    { number: 363, code: 'CE411', name: 'مشروع', units: 2, hours: 4 }
+                ],
+                'خريف 2024': [
+                    { number: 395, code: 'EE393', name: 'تطبيقات حاسوب 4', units: 3, hours: 3 }
+                ]
             }
-        }));
-    });
+        },
+
+        selectedStudent: '1091252001',
+        selectedDepartment: 'القسم العام',
+        selectedSemester: 'ربيع 2025',
+        searchAvailable: '',
+        assignments: {},
+        totals: { units: 0, hours: 0, termAvg: 0, passedUnits: 0, warnings: 0 },
+
+        init() { this.recalcTotals(); },
+        key() { return this.selectedStudent + '|' + this.selectedSemester; },
+        available() {
+            const list = (this.catalog[this.selectedDepartment] && this.catalog[this.selectedDepartment][this.selectedSemester]) || [];
+            const current = new Set(this.assignedList().map(x => x.code));
+            return list.filter(x => !current.has(x.code));
+        },
+        filteredAvailable() {
+            const term = this.searchAvailable.trim();
+            return this.available().filter(m => !term || [String(m.number), m.code, m.name].some(v => (v||'').includes(term)));
+        },
+        assignedList() { return this.assignments[this.key()] || [] },
+        assign(m) { const list = this.assignedList().slice(); list.push({ ...m, is_repeat:false, group:1, on100:false, grade: '', attempt:1, note:'' }); this.assignments[this.key()] = list; this.recalcGpa(); },
+        unassign(m) { const list = this.assignedList().filter(x => !(x.code === m.code && x.number === m.number)); this.assignments[this.key()] = list; this.recalcGpa(); },
+        recalcTotals() { const list = this.assignedList(); this.totals.units = list.reduce((s,x)=>s+(+x.units||0),0); this.totals.hours = list.reduce((s,x)=>s+(+x.hours||0),0); },
+        recalcGpa() {
+            this.recalcTotals();
+            const list = this.assignedList();
+            const sumUnits = list.reduce((s,x)=>s+(+x.units||0),0);
+            const sumWeighted = list.reduce((s,x)=> s + ((+x.grade||0) * (+x.units||0)), 0);
+            this.totals.termAvg = sumUnits ? (sumWeighted / sumUnits).toFixed(2) : 0;
+            this.totals.passedUnits = list.reduce((s,x)=> s + (((+x.grade||0) >= 50) ? (+x.units||0) : 0), 0);
+            this.totals.warnings = list.filter(x => (+x.grade||0) < 50).length;
+        },
+        exportCsv() { const list=this.assignedList(); if(!list.length){alert('لا توجد مواد مسجلة للطالب.');return;} const header=['رقم','رمز','اسم المادة','الوحدات','الساعات','إعادة','المجموعة','على 100','الدرجة','الدور','الوحدة×الدرجة','ملاحظة']; const rows=list.map(m=>[m.number,m.code,m.name,m.units,m.hours,m.is_repeat?'نعم':'لا',m.group??'',m.on100?'نعم':'لا',m.grade??'',m.attempt??1,(((+m.units||0)*(+m.grade||0)).toFixed(2)),m.note??'']); const csv=[header].concat(rows).map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=this.selectedStudent+'-'+this.selectedSemester+'-materials.csv'; a.click(); URL.revokeObjectURL(a.href); },
+        printResult() {
+            const list = this.assignedList();
+            const htmlRows = list.map((m,idx)=> '<tr>'+
+                '<td>'+ (m.code||'') +'</td>'+
+                '<td>'+ (m.name||'') +'</td>'+
+                '<td>'+ (m.units||'') +'</td>'+
+                '<td>'+ (m.grade||'') +'</td>'+
+                '<td>'+ (m.attempt||1) +'</td>'+
+                '<td>'+ (((+m.units||0) * (+m.grade||0)).toFixed(2)) +'</td>'+
+                '<td>'+ (m.note||'') +'</td>'+
+            '</tr>').join('');
+            const meta = {
+                student: this.students.find(s=>s.number===this.selectedStudent)?.name || '',
+                number: this.selectedStudent,
+                dept: this.selectedDepartment,
+                sem: this.selectedSemester,
+                avg: this.totals.termAvg,
+                passed: this.totals.passedUnits,
+                warns: this.totals.warnings
+            };
+            const html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف نتيجة</title>'+
+            '<style>body{font-family:\'Tahoma\',\'Arial\',sans-serif;direction:rtl;padding:24px;}' +
+            'table{width:100%;border-collapse:collapse;margin-top:8px;}th,td{border:1px solid #999;padding:6px;text-align:center;font-size:13px;}thead{background:#f3f4f6;}' +
+            '.meta{margin-bottom:10px;font-size:13px;display:flex;gap:16px;flex-wrap:wrap}.footer{margin-top:10px;font-size:13px}' +
+            '</style></head><body>'+
+            '<div class="meta"><div>رقم القيد: '+meta.number+'</div><div>الطالب: '+meta.student+'</div><div>القسم: '+meta.dept+'</div><div>الفصل: '+meta.sem+'</div><div>'+new Date().toLocaleDateString('ar-LY')+'</div></div>'+
+            '<table><thead><tr><th>رمز المادة</th><th>اسم المادة</th><th>عدد الوحدات</th><th>الدرجة</th><th>الدور</th><th>الوحدة × الدرجة</th><th>ملاحظة</th></tr></thead><tbody>'+htmlRows+'</tbody></table>'+
+            '<div class="footer"><div>المعدل الفصلي % '+meta.avg+'</div><div>الوحدات المنجزة '+meta.passed+'</div><div>الإنذارات '+meta.warns+'</div></div>'+
+            '</body></html>';
+            const w = window.open('', '_blank', 'width=900,height=650');
+            w.document.write(html); w.document.close(); w.focus(); w.print();
+        },
+        printSheet(){ window.print(); }
+    }));
+});
 </script>
 @endsection

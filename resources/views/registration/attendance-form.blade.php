@@ -33,6 +33,26 @@
             <button type="button" class="px-4 py-2 bg-green-600 text-white rounded" @click="setAll('حاضر')">تحديد الجميع حاضر</button>
             <button type="button" class="px-4 py-2 bg-yellow-500 text-white rounded" @click="setAll('غائب بعذر')">تحديد الجميع غائب بعذر</button>
             <button type="button" class="px-4 py-2 bg-gray-200 rounded" @click="resetStatuses">إعادة الضبط</button>
+            <div class="ms-auto flex items-center gap-2">
+                <span class="text-sm text-gray-600">نموذج الطباعة (قديم):</span>
+                <select x-model="meta.year" class="border rounded px-2 py-1 text-sm">
+                    <template x-for="y in meta.years" :key="y"><option :value="y" x-text="y"></option></template>
+                </select>
+                <select x-model="meta.term" class="border rounded px-2 py-1 text-sm">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+                <select x-model="meta.department" class="border rounded px-2 py-1 text-sm">
+                    <template x-for="d in meta.departments" :key="d"><option :value="d" x-text="d"></option></template>
+                </select>
+                <select x-model="meta.group" class="border rounded px-2 py-1 text-sm">
+                    <template x-for="g in meta.groups" :key="g"><option :value="g" x-text="g"></option></template>
+                </select>
+                <select x-model="meta.subject" class="border rounded px-2 py-1 text-sm">
+                    <template x-for="s in meta.subjects" :key="s"><option :value="s" x-text="s"></option></template>
+                </select>
+                <button type="button" class="px-3 py-2 bg-indigo-600 text-white rounded" @click="printOldSheet">طباعة</button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -139,6 +159,39 @@
 
             printTable() {
                 window.print();
+            },
+            // إعدادات بسيطة للطباعة على نمط المنظومة القديمة
+            meta: {
+                years: [2025,2024,2023],
+                departments: ['القسم العام','علوم حاسوب','هندسة كهربائية'],
+                groups: ['GS121','GS122','GS211'],
+                subjects: ['رياضيات 1','برمجة','فيزياء'],
+                year: 2025,
+                term: 1,
+                department: 'القسم العام',
+                group: 'GS121',
+                subject: 'رياضيات 1',
+            },
+            printOldSheet() {
+                const days = Array.from({length: 30}, (_,i)=> i+1);
+                const head = days.map(d=>'<th>'+d+'</th>').join('');
+                const rows = this.currentClass.students.map((s,i)=>'<tr>'+
+                    '<td>'+(i+1)+'</td>'+
+                    '<td>'+s.number+'</td>'+
+                    '<td class="text-right">'+s.name+'</td>'+
+                    days.map(()=>'<td>&nbsp;</td>').join('')+
+                '</tr>').join('');
+                const m=this.meta;
+                const metaTbl = '<table style="width:100%;border-collapse:collapse;margin-bottom:8px" dir="rtl">'
+                    +'<tr><td>السنة: '+m.year+'</td><td>الفصل: '+m.term+'</td><td>القسم: '+m.department+'</td></tr>'
+                    +'<tr><td>الشعبة: '+m.group+'</td><td>المادة: '+m.subject+'</td><td>'+new Date().toLocaleDateString('ar-LY')+'</td></tr>'
+                    +'</table>';
+                const html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف الحضور والغياب</title>'+
+                    '<style>body{font-family:\'Tahoma\',\'Arial\',sans-serif;direction:rtl;padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:4px;text-align:center;font-size:12px}thead{background:#f3f4f6} .text-right{text-align:right}</style>'+
+                    '</head><body><h3 style="margin:0 0 8px">كشف الحضور والغياب</h3>'+metaTbl+
+                    '<table><thead><tr><th>#</th><th>رقم القيد</th><th class="text-right">اسم الطالب</th>'+head+'</tr></thead><tbody>'+rows+'</tbody></table></body></html>';
+                const w=window.open('', '_blank', 'width=900,height=650');
+                w.document.write(html); w.document.close(); w.focus(); w.print();
             }
         }));
     });

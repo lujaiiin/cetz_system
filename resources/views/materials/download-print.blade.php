@@ -9,26 +9,32 @@
 </style>
 </head>
 <body>
-<h1>تنزيل المواد</h1>
+<h1>قائمة المواد</h1>
 
 <table>
     <thead>
         <tr>
-            <th>#</th>
-            <th>اسم الطالب</th>
-            <th>القسم</th>
-            <th>المادة</th>
-            <th>الفصل</th>
+            <th>رقم</th>
+            <th>رمز</th>
+            <th>اسم المادة</th>
+            <th>الوحدات</th>
+            <th>الساعات</th>
+            <th>تعتمد على</th>
+            <th>بديلة عن</th>
+            <th>المستخدم</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($materials as $material)
+        @foreach($materials as $m)
         <tr>
-            <td>{{ $material['id'] }}</td>
-            <td>{{ $material['student_name'] }}</td>
-            <td>{{ $material['department'] }}</td>
-            <td>{{ $material['subject'] }}</td>
-            <td>{{ $material['semester'] }}</td>
+            <td>{{ $m['number'] }}</td>
+            <td>{{ $m['code'] }}</td>
+            <td>{{ $m['name'] }}</td>
+            <td>{{ $m['units'] }}</td>
+            <td>{{ $m['hours'] }}</td>
+            <td>{{ $m['depends_on'] }}</td>
+            <td>{{ $m['alternative_for'] }}</td>
+            <td>{{ $m['user_name'] }}</td>
         </tr>
         @endforeach
     </tbody>

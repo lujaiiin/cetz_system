@@ -46,6 +46,8 @@ Route::prefix('data-management')->name('data.')->group(function () {
 });
 
 Route::view('accreditation', 'accreditation.index')->name('accreditation.index');
+Route::view('accreditation/student-approval', 'accreditation.student-approval')->name('accreditation.students');
+Route::view('accreditation/results-approval', 'accreditation.results-approval')->name('accreditation.results');
 
 
 
@@ -57,6 +59,7 @@ Route::prefix('study-exams')->group(function () {
     Route::view('final-results', 'study_exams.final-results')->name('final-results.index');
     Route::view('analysis', 'study_exams.analysis')->name('analysis.index');
     Route::view('projects', 'study_exams.projects')->name('projects.index');
+    Route::view('projects-graduates', 'study_exams.projects-graduates')->name('projects.graduates');
     Route::view('second-round', 'study_exams.second-round')->name('second-round.index');
     Route::view('deprived-list', 'study_exams.deprived-list')->name('deprived-list.index');
     Route::view('grade-sheet', 'study_exams.grade-sheet')->name('grade-sheet.index');
@@ -83,4 +86,5 @@ Route::get('/students', [UiController::class, 'studentsIndex'])->name('students.
 Route::get('/students/create', [UiController::class, 'studentsCreate'])->name('students.create');
 Route::get('/students/{id}', [UiController::class, 'studentsShow'])->name('students.show');
 Route::get('/students/all-records', [UiController::class, 'studentsAllRecords'])->name('students.allRecords');
-
+Route::get('/students/{id}/edit', [UiController::class, 'studentsEdit'])->name('students.edit');
+Route::post('/students/{id}/update', [UiController::class, 'studentsUpdate'])->name('students.update');

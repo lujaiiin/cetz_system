@@ -15,8 +15,15 @@
         <div class="flex flex-wrap gap-3 items-end">
             <div class="flex flex-wrap gap-3 items-end flex-1">
                 <div class="flex-1 min-w-[200px]">
-                    <label class="block text-sm text-gray-600 mb-1">بحث</label>
-                    <input type="text" x-model.trim="search" @input.debounce.300="applyFilters" placeholder="ابحث باسم الطالب أو السبب" class="border rounded px-3 py-2 w-full">
+                    <label class="block text-sm text-gray-600 mb-1">الاسم</label>
+                    <input type="text" x-model.trim="nameFilter" @input.debounce.300="applyFilters" placeholder="ابحث باسم الطالب" class="border rounded px-3 py-2 w-full">
+                </div>
+                <div class="min-w-[160px]">
+                    <label class="block text-sm text-gray-600 mb-1">الفصل</label>
+                    <select x-model="semesterFilter" @change="applyFilters" class="border rounded px-3 py-2 w-full">
+                        <option value="">كل الفصول</option>
+                        <template x-for="s in semesters" :key="'sem-'+s"><option :value="s" x-text="s"></option></template>
+                    </select>
                 </div>
                 <div class="min-w-[160px]">
                     <label class="block text-sm text-gray-600 mb-1">حالة الطلب</label>
@@ -78,22 +85,26 @@
         Alpine.data('enrollmentStop', () => ({
             statusOptions: ['قيد المراجعة', 'مقبول', 'مرفوض'],
             requestsSeed: [
-                { id: 1001, student: 'آمنة علي', department: 'هندسة كهربائية', reason: 'ظروف صحية', status: 'قيد المراجعة', submitted_at: '2025-01-05' },
-                { id: 1002, student: 'محمد عمر', department: 'علوم حاسوب', reason: 'سفر طويل', status: 'مقبول', submitted_at: '2024-12-20' },
-                { id: 1003, student: 'سارة محمود', department: 'هندسة ميكانيك', reason: 'ظروف عائلية', status: 'مرفوض', submitted_at: '2025-01-10' },
-                { id: 1004, student: 'ليلى يوسف', department: 'علوم حاسوب', reason: 'مرض مزمن', status: 'قيد المراجعة', submitted_at: '2025-01-12' }
+                { id: 1001, student: 'آمنة علي', department: 'هندسة كهربائية', semester: 'ربيع 2025', reason: 'ظروف صحية', status: 'قيد المراجعة', submitted_at: '2025-01-05' },
+                { id: 1002, student: 'محمد عمر', department: 'علوم حاسوب', semester: 'خريف 2024', reason: 'سفر طويل', status: 'مقبول', submitted_at: '2024-12-20' },
+                { id: 1003, student: 'سارة محمود', department: 'هندسة ميكانيك', semester: 'ربيع 2025', reason: 'ظروف عائلية', status: 'مرفوض', submitted_at: '2025-01-10' },
+                { id: 1004, student: 'ليلى يوسف', department: 'علوم حاسوب', semester: 'خريف 2024', reason: 'مرض مزمن', status: 'قيد المراجعة', submitted_at: '2025-01-12' }
             ],
             requests: [],
-            search: '',
+            nameFilter: '',
+            semesterFilter: '',
             statusFilter: '',
+            semesters: ['ربيع 2025','خريف 2024'],
 
             applyFilters() {
-                const term = this.search.trim();
+                const name = this.nameFilter.trim();
                 const status = this.statusFilter;
+                const sem = this.semesterFilter;
                 this.requests = this.requestsSeed.filter(row => {
-                    const matchesTerm = !term || [row.student, row.department, row.reason].some(field => field.includes(term));
+                    const matchesName = !name || row.student.includes(name);
+                    const matchesSem = !sem || row.semester === sem;
                     const matchesStatus = !status || row.status === status;
-                    return matchesTerm && matchesStatus;
+                    return matchesName && matchesSem && matchesStatus;
                 });
             },
 

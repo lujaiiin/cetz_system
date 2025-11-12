@@ -1,33 +1,37 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-6" x-data="gradeSheetTemplate()">
+<div class="space-y-6" x-data="gradeSheet()" x-init="init()">
     <div class="bg-white rounded-lg shadow p-6 space-y-4">
-        <h1 class="text-2xl font-bold">نموذج كشف الدرجات</h1>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm text-gray-600 mb-1">المادة</label>
-                <input type="text" x-model="form.subject" class="border rounded px-3 py-2 w-full" placeholder="مثال: رياضيات 1">
+                <select x-model="filters.subject" @change="applyFilters" class="border rounded px-3 py-2 w-full">
+                    <template x-for="subject in filters.subjects" :key="subject">
+                        <option :value="subject" x-text="subject"></option>
+                    </template>
+                </select>
             </div>
             <div>
-                <label class="block text-sm text-gray-600 mb-1">الشعبة</label>
-                <input type="text" x-model="form.section" class="border rounded px-3 py-2 w-full" placeholder="A">
+                <label class="block text-sm text-gray-600 mb-1">القسم</label>
+                <select x-model="filters.department" @change="applyFilters" class="border rounded px-3 py-2 w-full">
+                    <option value="">كل الأقسام</option>
+                    <template x-for="dept in filters.departments" :key="dept">
+                        <option :value="dept" x-text="dept"></option>
+                    </template>
+                </select>
             </div>
             <div>
-                <label class="block text-sm text-gray-600 mb-1">الفصل الدراسي</label>
-                <input type="text" x-model="form.semester" class="border rounded px-3 py-2 w-full" placeholder="ربيع 2025">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600 mb-1">المحاضر</label>
-                <input type="text" x-model="form.instructor" class="border rounded px-3 py-2 w-full" placeholder="اسم المحاضر">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600 mb-1">تاريخ الرصد</label>
-                <input type="date" x-model="form.recorded_at" class="border rounded px-3 py-2 w-full">
+                <label class="block text-sm text-gray-600 mb-1">الفصل</label>
+                <select x-model="filters.semester" @change="applyFilters" class="border rounded px-3 py-2 w-full">
+                    <template x-for="sem in filters.semesters" :key="sem">
+                        <option :value="sem" x-text="sem"></option>
+                    </template>
+                </select>
             </div>
             <div class="flex items-end gap-2">
-                <button type="button" class="px-4 py-2 bg-gray-200 rounded" @click="addRow">➕ إضافة صف</button>
-                <button type="button" class="px-4 py-2 bg-gray-100 border rounded" @click="resetRows">إعادة الضبط</button>
+                <button type="button" class="px-4 py-2 bg-gray-200 rounded" @click="window.print()">🖨️ طباعة</button>
+                <button type="button" class="px-4 py-2 bg-green-600 text-white rounded" @click="exportCsv">⬇️ تصدير CSV</button>
             </div>
         </div>
 
@@ -36,131 +40,123 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="border px-3 py-2 text-right">#</th>
-                        <th class="border px-3 py-2 text-right">الرقم الجامعي</th>
                         <th class="border px-3 py-2 text-right">اسم الطالب</th>
-                        <th class="border px-3 py-2 text-right">درجة الأعمال</th>
-                        <th class="border px-3 py-2 text-right">درجة الامتحان</th>
+                        <th class="border px-3 py-2 text-right">رقم القيد</th>
+                        <th class="border px-3 py-2 text-right">القسم</th>
+                        <th class="border px-3 py-2 text-right">100؟</th>
+                        <th class="border px-3 py-2 text-right">عملي 1</th>
+                        <th class="border px-3 py-2 text-right">نظري 1</th>
+                        <th class="border px-3 py-2 text-right">مجموع 1</th>
+                        <th class="border px-3 py-2 text-right">عملي 2</th>
+                        <th class="border px-3 py-2 text-right">نظري 2</th>
+                        <th class="border px-3 py-2 text-right">مجموع 2</th>
                         <th class="border px-3 py-2 text-right">المجموع</th>
-                        <th class="border px-3 py-2 text-right">ملاحظات</th>
-                        <th class="border px-3 py-2 text-right">إزالة</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <template x-for="(row, idx) in rows" :key="row.id">
+                    <template x-for="(row, idx) in records" :key="row.number">
                         <tr class="odd:bg-gray-50">
                             <td class="border px-3 py-2" x-text="idx + 1"></td>
-                            <td class="border px-3 py-2">
-                                <input type="text" x-model="row.number" class="border rounded px-2 py-1 w-full" placeholder="2025-001">
-                            </td>
-                            <td class="border px-3 py-2">
-                                <input type="text" x-model="row.name" class="border rounded px-2 py-1 w-full" placeholder="اسم الطالب">
-                            </td>
-                            <td class="border px-3 py-2">
-                                <input type="number" x-model.number="row.coursework" class="border rounded px-2 py-1 w-full" min="0" max="40">
-                            </td>
-                            <td class="border px-3 py-2">
-                                <input type="number" x-model.number="row.exam" class="border rounded px-2 py-1 w-full" min="0" max="60">
-                            </td>
-                            <td class="border px-3 py-2" x-text="rowTotal(row)"></td>
-                            <td class="border px-3 py-2">
-                                <input type="text" x-model="row.note" class="border rounded px-2 py-1 w-full">
-                            </td>
-                            <td class="border px-3 py-2">
-                                <button type="button" class="px-2 py-1 bg-red-100 text-red-700 rounded" @click="removeRow(idx)">حذف</button>
-                            </td>
+                            <td class="border px-3 py-2" x-text="row.name"></td>
+                            <td class="border px-3 py-2" x-text="row.number"></td>
+                            <td class="border px-3 py-2" x-text="row.department"></td>
+                            <td class="border px-3 py-2" x-text="row.on100 ? 'نعم' : 'لا'"></td>
+                            <td class="border px-3 py-2" x-text="row.practical1"></td>
+                            <td class="border px-3 py-2" x-text="row.theoretical1"></td>
+                            <td class="border px-3 py-2" x-text="row.sum1"></td>
+                            <td class="border px-3 py-2" x-text="row.practical2"></td>
+                            <td class="border px-3 py-2" x-text="row.theoretical2"></td>
+                            <td class="border px-3 py-2" x-text="row.sum2"></td>
+                            <td class="border px-3 py-2" x-text="row.total"></td>
                         </tr>
                     </template>
                 </tbody>
             </table>
-        </div>
-
-        <div class="flex justify-end gap-2">
-            <button type="button" class="px-4 py-2 bg-green-600 text-white rounded" @click="downloadCsv">⬇️ تنزيل CSV</button>
-            <button type="button" class="px-4 py-2 bg-gray-200 rounded" @click="printSheet">🖨️ طباعة</button>
         </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('alpine:init', () => {
-        Alpine.data('gradeSheetTemplate', () => ({
-            form: {
-                subject: 'رياضيات 1',
-                section: 'A',
-                semester: 'ربيع 2025',
-                instructor: 'د. أحمد علي',
-                recorded_at: new Date().toISOString().slice(0, 10)
-            },
-            rows: [
-                { id: 1, number: '2025-001', name: 'آمنة علي', coursework: 38, exam: 56, note: '' },
-                { id: 2, number: '2025-010', name: 'محمد عمر', coursework: 35, exam: 52, note: '' }
+        Alpine.data('gradeSheet', () => ({
+            dataset: [
+                { number: '2025-001', name: 'آمنة علي',   department: 'هندسة كهربائية', subject: 'رياضيات 1', semester: 'ربيع 2025', practical1: 20, theoretical1: 30, practical2: 10, theoretical2: 15 },
+                { number: '2025-010', name: 'محمد عمر',   department: 'علوم حاسوب',     subject: 'رياضيات 1', semester: 'ربيع 2025', practical1: 18, theoretical1: 28, practical2: 9,  theoretical2: 16 },
+                { number: '2025-015', name: 'ليلى يوسف', department: 'علوم حاسوب',     subject: 'رياضيات 1', semester: 'ربيع 2025', practical1: 15, theoretical1: 25, practical2: 8,  theoretical2: 12 },
+                { number: '2024-075', name: 'سارة محمود', department: 'هندسة ميكانيك',   subject: 'فيزياء 1',  semester: 'خريف 2024', practical1: 16, theoretical1: 22, practical2: 7,  theoretical2: 9  }
             ],
-            counter: 3,
+            filters: {
+                subject: '',
+                department: '',
+                semester: '',
+                subjects: [],
+                departments: [],
+                semesters: []
+            },
+            records: [],
 
-            addRow() {
-                this.rows.push({ id: this.counter++, number: '', name: '', coursework: 0, exam: 0, note: '' });
+            init() {
+                this.filters.subjects = Array.from(new Set(this.dataset.map(item => item.subject)));
+                this.filters.departments = Array.from(new Set(this.dataset.map(item => item.department)));
+                this.filters.semesters = Array.from(new Set(this.dataset.map(item => item.semester)));
+                this.filters.subject = this.filters.subjects[0] || '';
+                this.filters.semester = this.filters.semesters[0] || '';
+                this.applyFilters();
             },
 
-            removeRow(index) {
-                this.rows.splice(index, 1);
+            applyFilters() {
+                this.records = this.dataset
+                    .filter(row => (!this.filters.subject || row.subject === this.filters.subject)
+                        && (!this.filters.department || row.department === this.filters.department)
+                        && (!this.filters.semester || row.semester === this.filters.semester))
+                    .map(row => {
+                        const sum1 = (Number(row.practical1)||0) + (Number(row.theoretical1)||0);
+                        const sum2 = (Number(row.practical2)||0) + (Number(row.theoretical2)||0);
+                        const total = sum1 + sum2;
+                        return {
+                            ...row,
+                            sum1,
+                            sum2,
+                            total,
+                            on100: total <= 100
+                        };
+                    });
             },
 
-            resetRows() {
-                this.rows = [];
-                this.counter = 1;
+            gradeFromTotal(total) {
+                if (total >= 85) return 'ممتاز';
+                if (total >= 75) return 'جيد جداً';
+                if (total >= 65) return 'جيد';
+                if (total >= 50) return 'مقبول';
+                return 'ضعيف';
             },
 
-            rowTotal(row) {
-                return Number(row.coursework || 0) + Number(row.exam || 0);
-            },
-
-            collectMeta() {
-                return 'المادة: ' + this.form.subject + ' | الشعبة: ' + this.form.section + ' | الفصل: ' + this.form.semester + ' | المحاضر: ' + this.form.instructor;
-            },
-
-            downloadCsv() {
-                if (!this.rows.length) {
-                    alert('أضف صفوفاً قبل التنزيل.');
+            exportCsv() {
+                if (!this.records.length) {
+                    alert('لا توجد بيانات لتصديرها.');
                     return;
                 }
-                const header = ['الرقم الجامعي', 'اسم الطالب', 'درجة الأعمال', 'درجة الامتحان', 'المجموع', 'ملاحظات'];
-                const rows = this.rows.map(row => [row.number, row.name, row.coursework, row.exam, this.rowTotal(row), row.note]);
-                const meta = ['بيانات الكشف', this.collectMeta()];
-                const csv = meta.join('\n') + '\n' + [header].concat(rows).map(columns => columns.map(value => '"' + value + '"').join(',')).join('\n');
+                const header = ['اسم الطالب','رقم القيد','القسم','100؟','عملي 1','نظري 1','مجموع 1','عملي 2','نظري 2','مجموع 2','المجموع'];
+                const rows = this.records.map(row => [
+                    row.name,
+                    row.number,
+                    row.department,
+                    row.on100 ? 'نعم' : 'لا',
+                    row.practical1,
+                    row.theoretical1,
+                    row.sum1,
+                    row.practical2,
+                    row.theoretical2,
+                    row.sum2,
+                    row.total
+                ]);
+                const csv = [header].concat(rows).map(columns => columns.map(value => '"' + value + '"').join(',')).join('\n');
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'grade-sheet-template.csv';
+                link.download = 'grade-sheet.csv';
                 link.click();
                 URL.revokeObjectURL(link.href);
-            },
-
-            printSheet() {
-                const printWindow = window.open('', '_blank', 'width=900,height=650');
-                if (!printWindow) {
-                    return;
-                }
-                const rowsHtml = this.rows.map((row, idx) => '<tr>' +
-                    '<td>' + (idx + 1) + '</td>' +
-                    '<td>' + (row.number || '') + '</td>' +
-                    '<td>' + (row.name || '') + '</td>' +
-                    '<td>' + (row.coursework || 0) + '</td>' +
-                    '<td>' + (row.exam || 0) + '</td>' +
-                    '<td>' + this.rowTotal(row) + '</td>' +
-                    '<td>' + (row.note || '') + '</td>' +
-                '</tr>').join('');
-                const html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف الدرجات</title>' +
-                    '<style>body{font-family:\'Tahoma\',\'Arial\',sans-serif;padding:32px;direction:rtl;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;text-align:right;}thead{background:#f3f4f6;}</style>' +
-                    '</head><body>' +
-                    '<h2>كشف درجات - ' + this.form.subject + '</h2>' +
-                    '<p>' + this.collectMeta() + ' - تاريخ الرصد: ' + this.form.recorded_at + '</p>' +
-                    '<table><thead><tr><th>#</th><th>الرقم الجامعي</th><th>الاسم</th><th>الأعمال</th><th>الامتحان</th><th>المجموع</th><th>ملاحظات</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
-                    '</body></html>';
-                printWindow.document.write(html);
-                printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
-                printWindow.close();
             }
         }));
     });

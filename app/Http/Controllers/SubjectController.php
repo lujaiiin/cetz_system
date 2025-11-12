@@ -22,12 +22,19 @@ class SubjectController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
+            'number' => 'nullable|integer',
+            'code' => 'nullable|string|max:50',
             'name' => 'required|string|max:255',
+            'units' => 'nullable|integer|min:0|max:10',
+            'hours' => 'nullable|integer|min:0|max:20',
+            'depends_on' => 'nullable|string|max:255',
+            'alternative_for' => 'nullable|string|max:255',
+            'user_name' => 'nullable|string|max:100',
             'department_id' => 'nullable|exists:departments,id',
         ]);
 
-        Subject::create($request->all());
+        Subject::create($data);
         return redirect()->route('subjects.index')->with('success', 'تم إضافة المادة بنجاح');
     }
 
@@ -39,12 +46,19 @@ class SubjectController extends Controller
 
     public function update(Request $request, Subject $subject)
     {
-        $request->validate([
+        $data = $request->validate([
+            'number' => 'nullable|integer',
+            'code' => 'nullable|string|max:50',
             'name' => 'required|string|max:255',
+            'units' => 'nullable|integer|min:0|max:10',
+            'hours' => 'nullable|integer|min:0|max:20',
+            'depends_on' => 'nullable|string|max:255',
+            'alternative_for' => 'nullable|string|max:255',
+            'user_name' => 'nullable|string|max:100',
             'department_id' => 'nullable|exists:departments,id',
         ]);
 
-        $subject->update($request->all());
+        $subject->update($data);
         return redirect()->route('subjects.index')->with('success', 'تم تعديل المادة بنجاح');
     }
 

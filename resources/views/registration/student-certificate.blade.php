@@ -63,8 +63,8 @@
                 { number: '2024-075', name: 'سارة محمود', department: 'هندسة ميكانيك', nationalId: 'LY246810', semester: 'الثاني' }
             ],
             institute: {
-                name: 'كلية العلوم التطبيقية',
-                address: 'طرابلس - ليبيا',
+                name: 'كلية التقنية الهندسية',
+                address: 'زوارة - ليبيا',
                 phone: '+218 21 1234567'
             },
             selectedNumber: '',

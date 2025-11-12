@@ -68,39 +68,22 @@
             <table class="min-w-full text-sm border">
                 <thead class="bg-gray-100">
                     <tr>
-                        <th class="border px-3 py-2 text-right">رقم</th>
-                        <th class="border px-3 py-2 text-right">الطالب</th>
+                        <th class="border px-3 py-2 text-right">رقم القيد</th>
+                        <th class="border px-3 py-2 text-right">اسم الطالب</th>
                         <th class="border px-3 py-2 text-right">القسم</th>
-                        <th class="border px-3 py-2 text-right">المادة</th>
-                        <th class="border px-3 py-2 text-right">الفصل</th>
-                        <th class="border px-3 py-2 text-right">الحالة</th>
-                        <th class="border px-3 py-2 text-right">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template x-if="!records.length">
                         <tr>
-                            <td colspan="7" class="border px-3 py-4 text-center text-gray-500">لا توجد تسجيلات مطابقة.</td>
+                            <td colspan="3" class="border px-3 py-4 text-center text-gray-500">لا توجد تسجيلات مطابقة.</td>
                         </tr>
                     </template>
                     <template x-for="row in records" :key="row.uid">
                         <tr class="hover:bg-gray-50">
-                            <td class="border px-3 py-2" x-text="row.id"></td>
+                            <td class="border px-3 py-2" x-text="row.student_number"></td>
                             <td class="border px-3 py-2" x-text="row.student"></td>
                             <td class="border px-3 py-2" x-text="row.department"></td>
-                            <td class="border px-3 py-2" x-text="row.subject"></td>
-                            <td class="border px-3 py-2" x-text="row.semester"></td>
-                            <td class="border px-3 py-2">
-                                <span class="px-2 py-1 rounded"
-                                      :class="statusBadge(row.status)"
-                                      x-text="statusLabel(row.status)"></span>
-                            </td>
-                            <td class="border px-3 py-2 space-x-2 rtl:space-x-reverse">
-                                <button type="button" class="px-2 py-1 bg-blue-500 text-white rounded" @click="toggleStatus(row, 'approved')">اعتماد</button>
-                                <button type="button" class="px-2 py-1 bg-amber-500 text-white rounded" @click="toggleStatus(row, 'pending')">مراجعة</button>
-                                <button type="button" class="px-2 py-1 bg-red-500 text-white rounded" @click="toggleStatus(row, 'rejected')">رفض</button>
-                                <button type="button" class="px-2 py-1 bg-gray-200 rounded" @click="removeRegistration(row)">حذف</button>
-                            </td>
                         </tr>
                     </template>
                 </tbody>
@@ -128,26 +111,20 @@
                 const seedStatuses = ['pending', 'approved', 'pending', 'rejected'];
                 this.dataset = (this.raw || []).map((item, index) => ({
                     uid: String(item.id !== undefined ? item.id : index) + '-' + index,
-                    id: item.id,
+                    student_number: item.student_number || ('1091252' + String(1000 + index)),
                     student: item.student_name,
-                    department: item.department,
-                    subject: item.subject,
-                    semester: item.semester,
-                    status: seedStatuses[index % seedStatuses.length]
+                    department: item.department
                 }));
                 this.departments = Array.from(new Set(this.dataset.map(item => item.department))).filter(Boolean);
-                this.semesters = Array.from(new Set(this.dataset.map(item => item.semester))).filter(Boolean);
                 this.applyFilters();
             },
 
             applyFilters() {
                 const term = this.search.trim();
                 this.records = this.dataset.filter(row => {
-                    const matchesTerm = !term || [row.student, row.department, row.subject, row.semester].some(field => field.includes(term));
+                    const matchesTerm = !term || [row.student, row.department, row.student_number].some(field => String(field).includes(term));
                     const matchesDept = !this.departmentFilter || row.department === this.departmentFilter;
-                    const matchesSem = !this.semesterFilter || row.semester === this.semesterFilter;
-                    const matchesStatus = this.statusFilter === 'all' || row.status === this.statusFilter;
-                    return matchesTerm && matchesDept && matchesSem && matchesStatus;
+                    return matchesTerm && matchesDept;
                 });
                 this.updateSummary();
             },
@@ -202,15 +179,8 @@
                     alert('لا توجد بيانات لتصديرها.');
                     return;
                 }
-                const header = ['رقم', 'الطالب', 'القسم', 'المادة', 'الفصل', 'الحالة'];
-                const rows = this.records.map(row => [
-                    row.id,
-                    row.student,
-                    row.department,
-                    row.subject,
-                    row.semester,
-                    this.statusLabel(row.status)
-                ]);
+                const header = ['رقم القيد', 'اسم الطالب', 'القسم'];
+                const rows = this.records.map(row => [row.student_number, row.student, row.department]);
                 const csv = [header].concat(rows).map(columns => columns.map(value => '"' + value + '"').join(',')).join('\n');
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');

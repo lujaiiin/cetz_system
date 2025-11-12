@@ -94,8 +94,16 @@
     </div>
 
     <!-- الاعتماد -->
-    <div class="px-4">
-      <a href="{{ route('accreditation.index') }}" class="block px-4 py-2 hover:bg-gray-700 rounded">✅ الاعتماد</a>
+    <div x-data="{ openAcc: false }" class="px-4">
+      <button @click="openAcc = !openAcc" class="flex items-center justify-between w-full py-2 hover:bg-gray-700 rounded">
+        <span>✅ الاعتماد</span>
+        <span x-text="openAcc ? '▲' : '▼'"></span>
+      </button>
+      <div x-show="openAcc" class="mt-2 ml-2 space-y-1" x-transition>
+        <a href="{{ route('accreditation.index') }}" class="block px-3 py-1 hover:bg-gray-700 rounded">لوحة الاعتماد</a>
+        <a href="{{ route('accreditation.students') }}" class="block px-3 py-1 hover:bg-gray-700 rounded">اعتماد بيانات الطلبة</a>
+        <a href="{{ route('accreditation.results') }}" class="block px-3 py-1 hover:bg-gray-700 rounded">اعتماد النتائج</a>
+      </div>
     </div>
 
   </nav>

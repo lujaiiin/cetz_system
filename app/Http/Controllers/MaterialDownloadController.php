@@ -6,12 +6,38 @@ use Illuminate\Http\Request;
 
 class MaterialDownloadController extends Controller
 {
-    // بيانات تجريبية
+    // بيانات تجريبية بشكل يقارب شاشة المواد في الصور
     private $materials = [
-        ['id'=>1, 'student_name'=>'آمنة علي', 'department'=>'هندسة كهربائية', 'subject'=>'رياضيات 1', 'semester'=>'ربيع 2025'],
-        ['id'=>2, 'student_name'=>'محمد عمر', 'department'=>'علوم حاسوب', 'subject'=>'فيزياء 1', 'semester'=>'خريف 2024'],
-        ['id'=>3, 'student_name'=>'سارة محمود', 'department'=>'هندسة ميكانيك', 'subject'=>'ميكانيكيات 1', 'semester'=>'ربيع 2025'],
-        // أضف بيانات أكثر هنا
+        [
+            'number' => 350,
+            'code' => 'EE393',
+            'name' => 'تطبيقات حاسوب 4',
+            'units' => 3,
+            'hours' => 3,
+            'depends_on' => null,
+            'alternative_for' => null,
+            'user_name' => 'admin',
+        ],
+        [
+            'number' => 366,
+            'code' => 'CE411',
+            'name' => 'مشروع',
+            'units' => 2,
+            'hours' => 4,
+            'depends_on' => 'CE4111',
+            'alternative_for' => null,
+            'user_name' => 'reda',
+        ],
+        [
+            'number' => 395,
+            'code' => 'EE393',
+            'name' => 'تطبيقات حاسوب 3',
+            'units' => 3,
+            'hours' => 3,
+            'depends_on' => null,
+            'alternative_for' => null,
+            'user_name' => 'reda',
+        ],
     ];
 
     // عرض صفحة تنزيل المواد
@@ -19,12 +45,15 @@ class MaterialDownloadController extends Controller
     {
         $query = $request->input('query', '');
 
-        // بحث متقدم: البحث على الاسم، القسم، المادة، الفصل
+        // بحث: على رقم/رمز/اسم/ملاحظات/مستخدم
         $filtered = array_filter($this->materials, function($item) use ($query) {
-            return stripos($item['student_name'], $query) !== false
-                || stripos($item['department'], $query) !== false
-                || stripos($item['subject'], $query) !== false
-                || stripos($item['semester'], $query) !== false;
+            if ($query === '') return true;
+            return stripos((string)$item['number'], $query) !== false
+                || stripos($item['code'] ?? '', $query) !== false
+                || stripos($item['name'] ?? '', $query) !== false
+                || stripos($item['depends_on'] ?? '', $query) !== false
+                || stripos($item['alternative_for'] ?? '', $query) !== false
+                || stripos($item['user_name'] ?? '', $query) !== false;
         });
 
         return view('materials.download', ['materials' => $filtered, 'query' => $query]);
@@ -36,10 +65,13 @@ class MaterialDownloadController extends Controller
         $query = $request->input('query', '');
 
         $filtered = array_filter($this->materials, function($item) use ($query) {
-            return stripos($item['student_name'], $query) !== false
-                || stripos($item['department'], $query) !== false
-                || stripos($item['subject'], $query) !== false
-                || stripos($item['semester'], $query) !== false;
+            if ($query === '') return true;
+            return stripos((string)$item['number'], $query) !== false
+                || stripos($item['code'] ?? '', $query) !== false
+                || stripos($item['name'] ?? '', $query) !== false
+                || stripos($item['depends_on'] ?? '', $query) !== false
+                || stripos($item['alternative_for'] ?? '', $query) !== false
+                || stripos($item['user_name'] ?? '', $query) !== false;
         });
 
         return view('materials.download-print', ['materials' => $filtered]);

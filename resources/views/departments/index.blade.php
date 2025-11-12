@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="p-6">
+<div class="p-6" x-data="{search:''}">
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold">الأقسام</h1>
         <a href="{{ route('departments.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg">إضافة قسم</a>
@@ -12,6 +12,10 @@
     @endif
 
     <div class="bg-white rounded-lg shadow">
+        <div class="p-3 border-b">
+            <label class="block text-sm text-gray-600 mb-1">بحث</label>
+            <input type="text" x-model.trim="search" placeholder="ابحث باسم القسم" class="border rounded px-3 py-2 w-full md:w-1/3">
+        </div>
         <table class="w-full text-sm">
             <thead class="bg-gray-100 border-b">
                 <tr>
@@ -24,7 +28,7 @@
             </thead>
             <tbody>
                 @foreach($departments as $dept)
-                <tr class="border-b hover:bg-gray-50">
+                <tr class="border-b hover:bg-gray-50" x-show="!search || '{{ $dept->name }}'.toLowerCase().includes(search.toLowerCase())">
                     <td class="p-2">{{ $loop->iteration }}</td>
                     <td class="p-2">{{ $dept->name }}</td>
                     <td class="p-2 text-right space-x-2 rtl:space-x-reverse">

@@ -47,8 +47,8 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('instituteInfoForm', () => ({
             defaultValues: {
-                name: 'كلية العلوم التطبيقية',
-                address: 'طرابلس - ليبيا',
+                name: 'كلية التقنية الهندسية',
+                address: 'زوارة - ليبيا',
                 phone: '+218 21 1234567',
                 email: 'info@example.edu',
                 website: 'https://example.edu',

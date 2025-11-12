@@ -33,11 +33,53 @@ class UiController extends Controller
             ['id'=>3,'name'=>'هندسة ميكانيك'],
         ];
 
+        // بيانات موسعة لعرضها في الجدول (مطابقة للأعمدة في الصور)
         $students = [
-            (object)['student_number'=>'2025-001','name'=>'آمنة علي','department'=>'هندسة كهربائية','status'=>'active','photo'=>null],
-            (object)['student_number'=>'2025-010','name'=>'محمد عمر','department'=>'علوم حاسوب','status'=>'active','photo'=>null],
-            (object)['student_number'=>'2024-075','name'=>'سارة محمود','department'=>'هندسة ميكانيك','status'=>'graduated','photo'=>null],
+            (object)[
+                'student_number'=>'1091252001',
+                'name'=>'آمنة علي',
+                'department'=>'القسم العام',
+                'nationality'=>'ليبيا',
+                'gender'=>'أنثى',
+                'dob'=>'2005-01-15',
+                'passport'=>'P1234567',
+                'status'=>'active',
+                'photo'=>null
+            ],
+            (object)[
+                'student_number'=>'1091252002',
+                'name'=>'محمد عمر',
+                'department'=>'القسم العام',
+                'nationality'=>'ليبيا',
+                'gender'=>'ذكر',
+                'dob'=>'2004-12-10',
+                'passport'=>'P9876543',
+                'status'=>'active',
+                'photo'=>null
+            ],
+            (object)[
+                'student_number'=>'1091252003',
+                'name'=>'سارة محمود',
+                'department'=>'القسم العام',
+                'nationality'=>'ليبيا',
+                'gender'=>'أنثى',
+                'dob'=>'2006-03-06',
+                'passport'=>'P1122334',
+                'status'=>'graduated',
+                'photo'=>null
+            ],
         ];
+
+        // دمج أي تعديلات مؤقتة مخزنة في الجلسة (حسب id المبني على الفهرس idx+1)
+        $updates = session('student_updates', []);
+        foreach ($updates as $id => $data) {
+            $idx = (int)$id - 1;
+            if (isset($students[$idx]) && is_array($data)) {
+                foreach ($data as $k => $v) {
+                    $students[$idx]->{$k} = $v;
+                }
+            }
+        }
 
         return view('ui.students.index', compact('students','departments'));
     }
@@ -101,6 +143,104 @@ class UiController extends Controller
 
     return view('ui.students.show', compact('student'));
 }
+
+    public function studentsEdit($id)
+    {
+        // نفس مصدر البيانات المستخدم في studentsShow للتناسق
+        $students = [
+            1 => (object)[
+                'student_number'=>'2025-001',
+                'name'=>'آمنة علي',
+                'nationality'=>'ليبيا',
+                'gender'=>'أنثى',
+                'department'=>'هندسة كهربائية',
+                'registration_year'=>'2025',
+                'semester'=>'الأول',
+                'manual_number'=>'001',
+                'national_id'=>'LY123456',
+                'dob'=>'2005-01-15',
+                'passport'=>'P1234567',
+                'passport_number'=>'P1234567',
+                'bank_name'=>'بنك ليبيا',
+                'account_number'=>'1234567890',
+                'mother_name'=>'فاطمة علي',
+                'family_record'=>'1234',
+                'status'=>'active',
+            ],
+            2 => (object)[
+                'student_number'=>'2025-010',
+                'name'=>'محمد عمر',
+                'nationality'=>'مصر',
+                'gender'=>'ذكر',
+                'department'=>'علوم حاسوب',
+                'registration_year'=>'2025',
+                'semester'=>'الأول',
+                'manual_number'=>'010',
+                'national_id'=>'EG987654',
+                'dob'=>'2004-12-10',
+                'passport'=>'P9876543',
+                'passport_number'=>'P9876543',
+                'bank_name'=>'بنك مصر',
+                'account_number'=>'9876543210',
+                'mother_name'=>'أمينة محمود',
+                'family_record'=>'5678',
+                'status'=>'active',
+            ],
+        ];
+
+        // دمج التعديلات المؤقتة إن وُجدت
+        $updates = session('student_updates', []);
+        if (isset($updates[$id])) {
+            foreach ($updates[$id] as $k => $v) {
+                $students[$id]->{$k} = $v;
+            }
+        }
+
+        $student = $students[$id] ?? null;
+        if (!$student) {
+            return redirect()->route('students.index')->with('error', 'الطالب غير موجود');
+        }
+
+        // قوائم مساعدة للحقول
+        $departments = ['هندسة كهربائية','علوم حاسوب','القسم العام','هندسة ميكانيك'];
+        $genders = ['ذكر','أنثى'];
+
+        return view('ui.students.edit', compact('student','id','departments','genders'));
+    }
+
+    public function studentsUpdate(\Illuminate\Http\Request $request, $id)
+    {
+        $data = $request->validate([
+            'student_number'   => 'nullable|string|max:20',
+            'name'             => 'required|string|max:255',
+            'nationality'      => 'nullable|string|max:100',
+            'gender'           => 'nullable|string|max:10',
+            'department'       => 'nullable|string|max:255',
+            'registration_year'=> 'nullable|integer',
+            'semester'         => 'nullable|string|max:50',
+            'manual_number'    => 'nullable|string|max:50',
+            'national_id'      => 'nullable|string|max:50',
+            'passport_number'  => 'nullable|string|max:50',
+            'dob'              => 'nullable|date',
+            'bank_name'        => 'nullable|string|max:100',
+            'account_number'   => 'nullable|string|max:50',
+            'mother_name'      => 'nullable|string|max:255',
+            'family_record'    => 'nullable|string|max:50',
+            'status'           => 'nullable|string|max:20',
+        ]);
+
+        // التوافق مع الجدول في الواجهة (يعرض passport وليس passport_number)
+        if (isset($data['passport_number'])) {
+            $data['passport'] = $data['passport_number'];
+        }
+
+        // خزّن التعديل في الجلسة لكي ينعكس على قائمة الطلاب مؤقتاً
+        $updates = session('student_updates', []);
+        $updates[$id] = $data;
+        session(['student_updates' => $updates]);
+
+        return redirect()->route('students.index')->with('success', 'تم تحديث بيانات الطالب');
+    }
 public function studentsAllRecords()
 {
     // بيانات تجريبية لجميع الطلاب
